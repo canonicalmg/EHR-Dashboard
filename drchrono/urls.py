@@ -10,6 +10,7 @@ import views
 urlpatterns = [
     url(r'^setup/$', views.SetupView.as_view(), name='setup'),
     url(r'^welcome/$', views.DoctorWelcome.as_view(), name='setup'),
+    url(r'^appointment/status_change', views.AppointmentStatusChange.as_view(), name='status_change'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('social.apps.django_app.urls', namespace='social')),
 ]

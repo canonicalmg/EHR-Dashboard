@@ -1,11 +1,276 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Welcome to drchrono</title>
-</head>
-<body>
-<h1>Welcome {{ doctor.first_name }} {{ doctor.last_name }}</h1>
-{{ doctor }}
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block body %}
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
+        <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">
+            {% if doctor.practice_group_name %}
+                {{ doctor.practice_group_name }}
+            {% else %}
+                Dr. {{ doctor.last_name}} {{ doctor.specialty }} Practice
+            {% endif %}
+        </a>
+        <ul class="navbar-nav px-3">
+            <li class="nav-item text-nowrap">
+                <a class="nav-link" href="/disconnect">Sign out</a>
+            </li>
+        </ul>
+    </nav>
+
+        <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 bg-dark sidebar">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-home"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                                Dashboard <span class="sr-only">(current)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#" data-toggle="tooltip" data-placement="top" title="Coming soon!">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                Check-in Kiosk
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <main role="main" class="col-md-10">
+                <div class="col-md-12">
+                    <div class="card-deck" style="padding:2vh;">
+                        <div class="card">
+                                {% if current_or_next_apt.apt %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ current_or_next_apt.type }} Patient
+                                            <span class="badge badge-pill
+                                                    {% if current_or_next_apt.apt.status == '' or current_or_next_apt.apt.status == 'Confirmed' %}
+                                                        badge-info
+                                                    {% elif current_or_next_apt.apt.status == 'Arrived' %}
+                                                        badge-primary
+                                                    {% elif current_or_next_apt.apt.status == 'Checked In' %}
+                                                        badge-warning
+                                                    {% elif current_or_next_apt.apt.status == 'In Session' or current_or_next_apt.apt.status == 'Complete' %}
+                                                        badge-success
+                                                    {% elif current_or_next_apt.apt.status == 'Canceled' or current_or_next_apt.apt.status == 'Rescheduled' %}
+                                                        badge-secondary
+                                                    {% endif %}
+                                                    ">
+                                                        {% if current_or_next_apt.apt.status %}
+                                                            {{ current_or_next_apt.apt.status }}
+                                                        {% else %}
+                                                            Scheduled
+                                                        {% endif %}
+                                                    </span>
+                                        </h5>
+
+                                        <strong class="d-inline-block mb-2 text-success">{{current_or_next_apt.apt.patient.full_name}}</strong>
+                                        <h3 class="mb-0">
+                                            <a class="text-dark" href="#">Location: Room {{ current_or_next_apt.apt.exam_room }}</a>
+                                        </h3>
+                                        <div class="mb-1 text-muted">
+                                            Scheduled: {{ current_or_next_apt.apt.scheduled_time|date:"P" }}
+                                            {% if current_or_next_apt.type == 'Next' %}
+                                                ({{ current_or_next_apt.apt.scheduled_time|date:"M j" }})
+                                            {% endif %}
+                                        </div>
+                                        {% if current_or_next_apt.apt.status == 'Checked In' %}
+                                            <p class="card-text mb-auto">Waiting for {{ current_or_next_apt.apt.waiting_for|floatformat }} minutes</p>
+                                        {% endif %}
+                                        <p class="card-text mb-auto">{{ current_or_next_apt.reason }}</p>
+                                        <div>
+                                            {% if current_or_next_apt.type == 'Next' %}
+                                                <button type="button" class="btn btn-outline-primary" onclick="updateAppointment('{{ current_or_next_apt.apt.id }}', 'In Session')">Begin</button>
+                                                <button type="button" class="btn btn-outline-primary" onclick="updateAppointment('{{ current_or_next_apt.apt.id }}', 'Rescheduled')">Reschedule</button>
+                                            {% elif current_or_next_apt.type == 'Current' %}
+                                                <button type="button" class="btn btn-outline-primary" onclick="updateAppointment('{{ current_or_next_apt.apt.id }}', 'Complete')">Finish</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                {% else %}
+                                    <p class="card-text mb-auto">No more patients scheduled for today</p>
+                                {% endif %}
+                        </div>
+                        <div class="card card-chart box-shadow">
+                            <div class="card-body row">
+                                <div class="col-md-12">
+                                    <h5 class="text-center">Summary Stats</h5>
+                                </div>
+                                <div class="col-3">
+                                    <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                                        <a class="nav-link active" id="v-pills-wait-time-tab" data-toggle="pill" href="#v-pills-wait-time" role="tab" aria-controls="v-pills-wait-time" aria-selected="true">Wait Time</a>
+                                        <a class="nav-link" id="v-pills-appointments-scheduled-tab" data-toggle="pill" href="#v-pills-appointments-scheduled" role="tab" aria-controls="v-pills-appointments-scheduled" aria-selected="false">Appointments Scheduled</a>
+                                    </div>
+                                </div>
+                                <div class="col-9">
+                                    <div class="tab-content" id="v-pills-tabContent">
+                                        <div class="tab-pane fade show active" id="v-pills-wait-time" role="tabpanel" aria-labelledby="v-pills-wait-time-tab">
+                                            <div id="canvas-holder">
+                                                <canvas id="chart-area"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="v-pills-appointments-scheduled" role="tabpanel" aria-labelledby="v-pills-appointments-scheduled-tab">
+                                            <canvas id="chart-appointments-weekly"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                        <h2 class="pb-2 mb-0">Appointments - {{ today|date:"l (M j, Y)"}}</h2>
+                        <ul class="list-group">
+                            {% for apt in appointments %}
+                                <li href="#" class="list-group-item list-group-item-action">
+                                    <div class="row">
+                                    <div class="col-md-2">
+                                        <img class="img-thumbnail rounded mx-auto d-block" src="{{ apt.patient.patient_photo }}" style="max-height:15vh;">
+                                    </div>
+                                    <div class="col-md-10">
+                                        <h4 class="mb-1">{{ apt.patient.full_name }}</h4>
+                                        <span class="badge badge-pill
+                                        {% if apt.status == '' or apt.status == 'Confirmed' %}
+                                            badge-info
+                                        {% elif apt.status == 'Arrived' %}
+                                            badge-primary
+                                        {% elif apt.status == 'Checked In' %}
+                                            badge-warning
+                                        {% elif apt.status == 'In Session' or apt.status == 'Complete' %}
+                                            badge-success
+                                        {% elif apt.status == 'Canceled' or apt.status == 'Rescheduled' %}
+                                            badge-secondary
+                                        {% endif %}
+                                        ">
+                                            {% if apt.status %}
+                                                {{ apt.status }}
+                                            {% else %}
+                                                Scheduled
+                                            {% endif %}
+                                        </span>
+
+
+                                        <p class="mb-1">Location: Room {{ apt.exam_room }}</p>
+                                        <p class="mb-1">Scheduled: {{ apt.scheduled_time|date:"P (M j)" }}
+                                        </p>
+                                        {% if apt.reason %}
+                                            <p class="mb-1">Reason: {{ apt.reason }}</p>
+                                        {% endif %}
+                                        <div>
+                                            {% if apt.status == 'Complete' or apt.status == 'Canceled' or apt.status == 'Rescheduled' %}
+                                                <button type="button" class="btn btn-outline-primary disabled">No Actions Available</button>
+                                            {% else %}
+                                                <button type="button" class="btn btn-outline-primary" onclick="updateAppointment('{{ apt.id }}', 'In Session')">Begin</button>
+                                                <button type="button" class="btn btn-outline-primary" onclick="updateAppointment('{{ apt.id }}', 'Rescheduled')">Reschedule</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                </div>
+            </main>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+    // Appointments Served
+    var appointmentsWeeklyConfig = {
+        type: 'bar',
+        data: {
+            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            datasets: [{
+                barPercentage: 0.5,
+                barThickness: 6,
+                maxBarThickness: 8,
+                minBarLength: 2,
+                data: [
+                    {% for s in stats.appointments_serviced %}
+                        {{ s }},
+                    {% endfor %}
+                ],
+                label: 'Appointments',
+                backgroundColor: Array(7).fill('blue')
+            }]
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'Appointments Scheduled'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            scales: {
+                xAxes: [{
+                    stacked: true
+                }],
+                yAxes: [{
+                    stacked: true
+                }]
+            }
+        }
+    };
+
+    // Average wait time
+    var avgWaitConfig = {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [
+                    {{ stats.avg_wait_time }}, {{ stats.avg_duration }}
+                ],
+                backgroundColor: [
+                    'purple', 'blue'
+                ],
+                label: 'Dataset 1'
+            }],
+            labels: [
+                'Patient Waiting Time(min)',
+                'Appointment Duration(min)',
+            ]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: true,
+                text: 'Average Wait Time vs Duration'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            }
+        }
+    };
+    window.onload = function() {
+        var avgWaitCtx = document.getElementById('chart-area').getContext('2d');
+        var appointmentsWeeklyCtx = document.getElementById('chart-appointments-weekly').getContext('2d');
+        window.avgWaitTime = new Chart(avgWaitCtx, avgWaitConfig);
+        window.appointmentsWeekly = new Chart(appointmentsWeeklyCtx, appointmentsWeeklyConfig);
+
+    };
+
+    function updateAppointment(id, status){
+        $.ajax({
+            type: "GET",
+            url: "/appointment/status_change",
+            data: {'id': id, 'status': status}
+        }).done(function() {
+            location.reload();
+        });
+    }
+</script>
+{% endblock %}

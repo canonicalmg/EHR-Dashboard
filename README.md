@@ -83,3 +83,8 @@ the application.
 If you have trouble at any point in the setup process, feel free to reach out to the developer
 who introduced you to the project. We try to minimize setup friction, but sometimes things go wrong, and we genuinely 
 appreciate feedback about how to make things better!
+
+_________________________________________________________________________________
+### Initial Setup
+- Visit localhost:8080/login/drchrono to initialize django-social-auth account state
+- 

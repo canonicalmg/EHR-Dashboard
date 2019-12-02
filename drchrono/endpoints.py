@@ -100,9 +100,11 @@ class BaseEndpoint(object):
             self.logger.debug("list got page {}".format('url'))
             while url:
                 data = response.json()
-                url = data['next']  # Same as the resource URL, but with the page query parameter present
-                for result in data['results']:
-                    yield result
+                # url = data['next']  # Same as the resource URL, but with the page query parameter present
+                # Removing iterator and returning results. Should work fine if there is no pagination with drchrono API
+                return data['results']
+                # for result in data['results']:
+                #     yield result
         else:
             exe = ERROR_CODES.get(response.status_code, APIException)
             self.logger.debug("list exception {}".format(exe))
