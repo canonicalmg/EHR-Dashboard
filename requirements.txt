@@ -4,7 +4,7 @@ Django==1.11.23
 django-extensions==2.2.5
 djangorestframework==3.9.4
 enum34==1.1.6
-httplib2==0.14.0
+httplib2==0.18.0
 ipython==5.8.0
 ipython-genutils==0.2.0
 MySQL-python==1.2.5
